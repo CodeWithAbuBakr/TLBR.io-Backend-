@@ -1,5 +1,5 @@
 import { loginSchema, registerSchema } from "../config/zod.js";
-import { redisClient } from "../index.js";
+import { redisClient } from "../server.js";
 import TryCatch from "../middlewares/TryCatch.js";
 import sanitize from "mongo-sanitize";
 import { User } from "../models/User.js";
@@ -66,7 +66,7 @@ export const registerUser = TryCatch(async (req, res) => {
     await redisClient.set(verifyKey, dataToStore, { EX: 300 });
 
     const subject = "Verify your email address for TLBR.io account creation";
-    
+
     const html = getVerifyEmailHtml({ email, token: verifyToken });
 
     await sendMail(email, subject, html);
@@ -118,7 +118,7 @@ export const verifyUser = TryCatch(async (req, res) => {
 });
 
 
-export const loginUser = TryCatch(async (req, res) => { 
+export const loginUser = TryCatch(async (req, res) => {
     const senitizedBody = sanitize(req.body);
     const validation = loginSchema.safeParse(senitizedBody);
 
@@ -174,7 +174,7 @@ export const loginUser = TryCatch(async (req, res) => {
     await redisClient.set(otpKey, otp, { EX: 300 });
 
     const subject = "Your OTP for TLBR.io login";
-    
+
     const html = getOtpHtml({ email, otp });
 
     await sendMail(email, subject, html);
@@ -205,9 +205,9 @@ export const verifyOtp = TryCatch(async (req, res) => {
     }
 
     await redisClient.del(otpKey);
-    
+
     let user = await User.findOne({ email });
-     
+
     const tokenData = await generateToken(user._id, res);
 
     res.status(200).json({
@@ -220,8 +220,8 @@ export const myProfile = TryCatch(async (req, res) => {
     const user = req.user;
     res.status(200).json({ user });
 });
- 
-export const refreshToken = TryCatch(async (req, res) => { 
+
+export const refreshToken = TryCatch(async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
         return res.status(401).json({ message: "Invalid refresh token" });
@@ -231,7 +231,7 @@ export const refreshToken = TryCatch(async (req, res) => {
     if (!decoded) {
         return res.status(401).json({ message: "Invalid refresh token" });
     }
-    
+
     generateAccessToken(decoded.id, res);
 
     res.status(200).json({ message: "Access token refreshed successfully" });

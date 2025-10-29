@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { redisClient } from '../index.js';
+import { redisClient } from '../server.js';
 
-export const generateToken = async(id, res) => { 
+export const generateToken = async (id, res) => {
     const accessToken = jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '1m',
     });
@@ -31,14 +31,14 @@ export const generateToken = async(id, res) => {
     return { accessToken, refreshToken };
 }
 
-export const verifyRefreshToken = async (refreshToken) => { 
+export const verifyRefreshToken = async (refreshToken) => {
     try {
         const decodedData = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
         if (!decodedData) {
             throw new Error("Invalid refresh token");
         }
         const storedRefreshToken = await redisClient.get(`refresh_token:${decodedData.id}`);
-        if (storedRefreshToken === refreshToken) { 
+        if (storedRefreshToken === refreshToken) {
             return decodedData;
         }
 
@@ -49,7 +49,7 @@ export const verifyRefreshToken = async (refreshToken) => {
     }
 }
 
-export const generateAccessToken = (id, res) => { 
+export const generateAccessToken = (id, res) => {
     const accessToken = jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '1m',
     });
@@ -63,6 +63,6 @@ export const generateAccessToken = (id, res) => {
     });
 }
 
-export const revokeRefreshToken = async (id) => { 
+export const revokeRefreshToken = async (id) => {
     await redisClient.del(`refresh_token:${id}`);
 }
