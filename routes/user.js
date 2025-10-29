@@ -9,7 +9,7 @@ router.post("/register", registerUser);
 router.get("/verify/:token", verifyUser);
 router.post("/login", loginUser);
 router.post("/verify/otp", verifyOtp);
-router.get("/refresh", refreshToken);
+router.get("/refresh/token", refreshToken);
 router.get("/logout", isAuth, logoutUser);
 
 export default router;
