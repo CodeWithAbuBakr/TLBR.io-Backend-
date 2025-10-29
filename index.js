@@ -45,7 +45,9 @@ app.use(cors({
 
 // Routes
 app.use('/api/v1', userRoutes);
-
+app.use('/', (req, res) => {
+    res.send("TLBR.io APIs are running...");
+});
 
 const PORT = process.env.PORT || 5000;
 
