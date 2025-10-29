@@ -18,7 +18,7 @@ export const generateToken = async (id, res) => {
         httpOnly: true,
         // secure: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'none',
         maxAge: 1 * 60 * 1000,
     });
 
@@ -58,7 +58,7 @@ export const generateAccessToken = (id, res) => {
         httpOnly: true,
         // secure: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'none',
         maxAge: 1 * 60 * 1000,
     });
 }
