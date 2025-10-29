@@ -45,6 +45,8 @@ app.use(cors({
     ]
 }));
 
+app.options('*', cors());
+
 // Routes
 app.use('/api/v1', userRoutes);
 app.use('/', (req, res) => {
