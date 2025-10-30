@@ -18,13 +18,16 @@ export const isAuth = async (req, res, next) => {
         }
 
         const sessionActive = await isActiveSession(decodedData.id, decodedData.sessionId);
-        if (!sessionActive) {
-            res.clearCookie('accessToken');
-            res.clearCookie('refreshToken');
-            res.clearCookie('csrfToken');
 
-            return res.status(401).json({ message: "Session expired. You have been logged in from another device" });
-         }
+        console.log("Session Active:", sessionActive);
+
+        // if (!sessionActive) {
+        //     res.clearCookie('accessToken');
+        //     res.clearCookie('refreshToken');
+        //     res.clearCookie('csrfToken');
+
+        //     return res.status(401).json({ message: "Session expired. You have been logged in from another device" });
+        //  }
 
         const cacheUser = await redisClient.get(`user:${decodedData.id}`);
 
@@ -55,7 +58,7 @@ export const isAuth = async (req, res, next) => {
 export const authorizedAdmin = (req, res, next) => {
     const user = req.user;
 
-    if (user !== 'admin') {
+    if (user.role !== 'admin') {
         res.status(401).json({ message: "you are not allowed for this activity" });
     }
     next();

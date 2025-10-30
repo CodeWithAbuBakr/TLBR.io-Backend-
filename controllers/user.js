@@ -170,8 +170,7 @@ export const loginUser = TryCatch(async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const otpKey = `otp:${normalizedEmail}`;
+    const otpKey = `otp:${email}`;
 
     await redisClient.set(otpKey, otp, { EX: 300 });
 
@@ -193,8 +192,7 @@ export const verifyOtp = TryCatch(async (req, res) => {
     if (!email || !otp) {
         return res.status(400).json({ message: "Email and OTP are required" });
     }
-    const normalizedEmail = email.toLowerCase().trim();
-    const otpKey = `otp:${normalizedEmail}`;
+    const otpKey = `otp:${email}`;
 
     const storedOtpString = await redisClient.get(otpKey);
     if (!storedOtpString) {
@@ -232,6 +230,7 @@ export const myProfile = TryCatch(async (req, res) => {
     if (sessionData) {
         const parsedSession = JSON.parse(sessionData);
         sessionInfo = {
+            sessionId,
             loginTime: parsedSession.createdAt,
             lastActivity: parsedSession.lastActivity,
         }
