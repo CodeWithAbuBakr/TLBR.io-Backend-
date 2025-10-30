@@ -4,14 +4,19 @@ import { generateCSRFToken, revokeCSRFToken } from './csrfMiddleware.js';
 import crypto from 'crypto';
 
 export const generateToken = async (id, res) => {
-    const sessionId = crypto.randomBytes(16).toString('hex');
-    const accessToken = jwt.sign({ id, sessionId }, process.env.JWT_SECRET, {
-        expiresIn: '15m',
-    });
+    const sessionId = crypto.randomBytes(16).toString("hex");
 
-    const refreshToken = jwt.sign({ id, sessionId }, process.env.REFRESH_SECRET, {
-        expiresIn: '7d',
-    });
+    const accessToken = await jwt.sign(
+        { id, sessionId },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+    );
+
+    const refreshToken = await jwt.sign(
+        { id, sessionId },
+        process.env.REFRESH_SECRET,
+        { expiresIn: "7d" }
+    );
 
     const refreshTokenKey = `refresh_token:${id}`;
     const activeSessionKey = `active_session:${id}`;
@@ -27,9 +32,8 @@ export const generateToken = async (id, res) => {
     const sessionData = {
         userId: id,
         sessionId,
-        createdAt: new Date.toISOString(),
-        lastActivity: new Date.toISOString(),
-
+        createdAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString(),
     };
 
     await redisClient.setEx(refreshTokenKey, 7 * 24 * 60 * 60, refreshToken);
@@ -39,28 +43,30 @@ export const generateToken = async (id, res) => {
         JSON.stringify(sessionData)
     );
 
-    await redisClient.setEx(sessionDatakey, 7 * 24 * 60 * 60, sessionData);
+    // store serialized JSON (Redis strings only)
+    await redisClient.setEx(
+        sessionDatakey,
+        7 * 24 * 60 * 60,
+        JSON.stringify(sessionData)
+    );
 
-
-    res.cookie('accessToken', accessToken, {
+    res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        // secure: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "none",
         maxAge: 15 * 60 * 1000,
     });
 
-    res.cookie('refreshToken', refreshToken, {
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+    res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        sameSite: 'none',
-        // secure: true,
+        sameSite: "none",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     const csrfToken = await generateCSRFToken(id, res);
 
     return { accessToken, refreshToken, csrfToken, sessionId };
-}
+};
 
 export const verifyRefreshToken = async (refreshToken) => {
     try {
@@ -116,7 +122,7 @@ export const revokeRefreshToken = async (userId) => {
     const activeSessionId = await redisClient.get(`active_session:${userId}`);
     await redisClient.del(`refresh_token:${userId}`);
     await redisClient.del(`active_session:${activeSessionId}`);
-    if(activeSessionId) {
+    if (activeSessionId) {
         await redisClient.del(`session:${activeSessionId}`);
     }
     await revokeCSRFToken(userId);
