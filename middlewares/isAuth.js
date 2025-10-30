@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { redisClient } from '../server.js';
 import { User } from '../models/User.js';
+import { isActiveSession } from '../config/generateToken.js';
 
 export const isAuth = async (req, res, next) => {
     try {
@@ -16,10 +17,20 @@ export const isAuth = async (req, res, next) => {
             return res.status(400).json({ message: "Token expired" });
         }
 
+        const sessionActive = await isActiveSession(decodedData.id, decodedData.sessionId);
+        if (!sessionActive) {
+            res.clearCookie('accessToken');
+            res.clearCookie('refreshToken');
+            res.clearCookie('csrfToken');
+
+            return res.status(401).json({ message: "Session expired. You have been logged in from another device" });
+         }
+
         const cacheUser = await redisClient.get(`user:${decodedData.id}`);
 
         if (cacheUser) {
             req.user = JSON.parse(cacheUser);
+            req.sessionId = decodedData.sessionId;
             return next();
         }
 
@@ -32,9 +43,20 @@ export const isAuth = async (req, res, next) => {
         await redisClient.set(`user:${decodedData.id}`, JSON.stringify(user), { EX: 3600 });
 
         req.user = user;
+        req.sessionId = decodedData.sessionId;
         next();
 
     } catch (error) {
         res.status(500).json({ message: error.message || "Internal Server Error" });
     }
+}
+
+
+export const authorizedAdmin = (req, res, next) => {
+    const user = req.user;
+
+    if (user !== 'admin') {
+        res.status(401).json({ message: "you are not allowed for this activity" });
+    }
+    next();
 }
