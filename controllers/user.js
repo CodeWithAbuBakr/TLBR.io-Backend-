@@ -279,6 +279,33 @@ export const refreshCSRF = TryCatch(async (req, res) => {
 });
 
 
+// Admin Controllers
+
 export const adminController = TryCatch(async (req, res) => {
     res.status(200).json({ message: "Welcome to the admin panel" });
+});
+
+
+export const getAllUsers = TryCatch(async (req, res) => {
+    const users = await User.find().select("-password -refreshToken");
+    return res.status(200).json({ success: true, count: users.length, users });
+});
+
+export const deleteUser = TryCatch(async (req, res) => {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    if (req.user._id.toString() === id) {
+        return res.status(400).json({ message: "You cannot delete your own account" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    await redisClient.del(`user:${id}`);
+
+    res.status(200).json({ message: "User deleted successfully" });
 });

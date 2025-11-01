@@ -125,7 +125,5 @@ export const revokeRefreshToken = async (userId) => {
 
 export const isActiveSession = async (userId, sessionId) => {
     const activeSessionId = await redisClient.get(`active_session:${userId}`);
-    console.log("Active Session ID from Redis:", activeSessionId);
-    console.log("Provided Session ID:", sessionId);
     return activeSessionId === sessionId;
 }
